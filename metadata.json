@@ -1,0 +1,6 @@
+{
+  "name": "하루생식 - 간편한 한끼",
+  "description": "국내산 50가지 곡물과 채소로 정직하게 만든 간편하고 든든한 하루 한잔 생식",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

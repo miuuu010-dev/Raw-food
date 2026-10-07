@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Catch-all Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == "miuuu010@gmail.com" && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'orderNumber', 'customerName', 'phone', 'address', 'itemTitle', 'quantity', 'totalPrice', 'paymentMethod', 'status'])
+        && data.keys().hasOnly(['id', 'orderNumber', 'customerName', 'phone', 'address', 'addressDetail', 'memo', 'itemTitle', 'quantity', 'totalPrice', 'paymentMethod', 'status', 'trackingNumber', 'createdAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() <= 64
+        && data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 50
+        && data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 30
+        && data.address is string && data.address.size() > 0 && data.address.size() <= 200
+        && (!('addressDetail' in data) || (data.addressDetail is string && data.addressDetail.size() <= 100))
+        && (!('memo' in data) || (data.memo is string && data.memo.size() <= 200))
+        && data.itemTitle is string && data.itemTitle.size() <= 100
+        && data.quantity is number && data.quantity > 0 && data.quantity <= 100
+        && data.totalPrice is number && data.totalPrice > 0
+        && data.paymentMethod in ['card', 'bank', 'easy', 'kakaopay', 'naverpay', 'tosspay']
+        && data.status in ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'];
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'email'])
+        && data.keys().hasOnly(['id', 'name', 'email', 'createdAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 50
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 100;
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      // Any customer can create an order
+      allow create: if isValidId(orderId) && incoming().id == orderId;
+
+      // Anyone can read orders (customers lookup by ID, seller views dashboard)
+      allow read: if true;
+
+      // Seller or system can update order status and details
+      allow update: if isValidId(orderId);
+
+      // Administrator can delete orders
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId));
+      allow create, update: if isValidId(userId) && (isAdmin() || (isSignedIn() && request.auth.uid == userId)) && isValidUser(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+  }
+}

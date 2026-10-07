@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order for Haru Saengsik",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "orderNumber": { "type": "string", "maxLength": 64 },
+        "customerName": { "type": "string", "maxLength": 50 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "address": { "type": "string", "maxLength": 200 },
+        "addressDetail": { "type": "string", "maxLength": 100 },
+        "memo": { "type": "string", "maxLength": 200 },
+        "itemTitle": { "type": "string", "maxLength": 100 },
+        "quantity": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["card", "bank", "easy", "kakaopay", "naverpay", "tosspay"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "shipping", "delivered", "cancelled"] },
+        "trackingNumber": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "orderNumber",
+        "customerName",
+        "phone",
+        "address",
+        "itemTitle",
+        "quantity",
+        "totalPrice",
+        "paymentMethod",
+        "status"
+      ]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Store Administrator definition",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "owner"] }
+      },
+      "required": ["email", "role"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Registered customer profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "email"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Store customer purchase orders"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Store administrators whitelist"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered customer profiles"
+    }
+  }
+}
